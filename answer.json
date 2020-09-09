@@ -1,0 +1,23 @@
+{
+  "update_id": 652593487,
+  "message": {
+    "message_id": 7,
+    "from": {
+      "id": 272482753,
+      "is_bot": false,
+      "first_name": "B.",
+      "last_name": "Vadim",
+      "username": "BarVadim",
+      "language_code": "ru"
+    },
+    "chat": {
+      "id": 272482753,
+      "first_name": "B.",
+      "last_name": "Vadim",
+      "username": "BarVadim",
+      "type": "private"
+    },
+    "date": 1599566819,
+    "text": "322"
+  }
+}
