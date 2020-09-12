@@ -10,24 +10,30 @@ from flask_sslify import SSLify
 
 headers = {
     'Accepts': 'application/json',
-    'X-CMC_PRO_API_KEY': '0e8f29cb-7eaf-4fcc-8aa4-0a00b1802186',
+    'X-CMC_PRO_API_KEY': '0e8f29cb-7eaf-4fcc-8aa4-0a00b1802186',  # Auth token
 }
+
+with open('name_symbol.json', 'r') as fl:
+    data = json.load(fl)
 
 app = Flask(__name__)
 sslify = SSLify(app)
 
-URL = 'https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/'
+URL = 'https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/'  # Telegram bot
 
 
 # https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/SetWebhook?url=https://bardiervadim.pythonanywhere.com/
-# https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/deleteWebhook
+# https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/SetWebhook?url=https://https://0651af91b033.ngrok.io/
+# https://api.telegram.org/bot1205726686:AAG-lEGFB_xipMNrwA3rHxCzG6Dg04To8Vg/deleteWebhook   -> delete webhook
 
 def write_json(data, filename='answer.json'):
+    """Save server json-answer."""
     with open(filename, 'w') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def send_message(chat_id, text='bla-bla-bla'):
+def send_message(chat_id, text='There in no text here'):
+    """Send back message to the user."""
     url = URL + 'sendMessage'
     answer = {'chat_id': chat_id, 'text': text}
     r = requests.post(url, json=answer)
@@ -35,22 +41,37 @@ def send_message(chat_id, text='bla-bla-bla'):
 
 
 def parse_text(text):
+    """Parse user text (return name of the crypt)."""
+    print(text)
+    if text[0] != '/':
+        return text
     pattern = r'/\w+'
     crypto = re.search(pattern=pattern, string=text).group()
-    return crypto[1:]
+    return crypto[1:].lower()
 
 
 def get_price(crypto):
-    url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?slug={}'.format(crypto)
+    """get crypt-name, returns price or error."""
+    """Parse server answer (return crypt price)."""
+    try:
+        url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol={}'.format(data[crypto])
+    except KeyError:
+        url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?slug={}'.format(crypto)
 
     session = Session()
     session.headers.update(headers)
     lst = []
     r = session.get(url).json()
 
-    for k, v in r['data'].items():
-        lst.append(v)
-        break
+    write_json(r, filename='aaa.json')
+
+    try:
+        for k, v in r['data'].items():
+            lst.append(v)
+            break
+    except KeyError:
+        return 'Invalid name of crypt! Please, use /name_cryptocurrency to get the current value of the cryptocurrency ' \
+               'on the market (e.g. /bitcoin).'
 
     price = lst[0]['quote']['USD']['price']
 
@@ -66,9 +87,29 @@ def index():
 
         pattern = r'/\w+'
 
-        if re.search(pattern, message):
+        if message == '/start':
+            hello_text = 'Hi, I am a telegram bot that will help you stay abreast of the latest developments in the ' \
+                         'world of cryptology. Write me /name_cryptocurrency to get the current value of the ' \
+                         'cryptocurrency on the market (e.g. /bitcoin).'
+            send_message(chat_id, text=hello_text)
+
+        elif message == '/commands':
+            commands_text = 'List of commands: \n' \
+                            '1) /name_cryptocurrency to get the current value of the ' \
+                         'cryptocurrency on the market (e.g. /bitcoin). \n' \
+                            'P.S. Other commands are coming soon!'
+            send_message(chat_id, text=commands_text)
+
+        elif re.search(pattern, message):
             price = get_price(parse_text(message))
-            send_message(chat_id, text='Цена криптовалюты: {} USD.'.format(price))
+            if type(price) == float:
+                send_message(chat_id, text='Цена криптовалюты: {} USD.'.format(price))
+            else:
+                send_message(chat_id, text=price)
+        else:
+            send_message(chat_id,
+                         text='Please, use /name_cryptocurrency to get the current value of the cryptocurrency ' \
+                              'on the market (e.g. /bitcoin).')
 
         return jsonify(r)
     return '<h1>Bot welcomes you</h1>'
