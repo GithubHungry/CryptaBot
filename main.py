@@ -74,8 +74,10 @@ def get_price(crypto):
                'on the market (e.g. /bitcoin).'
 
     price = lst[0]['quote']['USD']['price']
+    name = lst[0]['name']
+    symbol = lst[0]['symbol']
 
-    return price
+    return price, name, symbol
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -96,14 +98,14 @@ def index():
         elif message == '/commands':
             commands_text = 'List of commands: \n' \
                             '1) /name_cryptocurrency to get the current value of the ' \
-                         'cryptocurrency on the market (e.g. /bitcoin). \n' \
+                            'cryptocurrency on the market (e.g. /bitcoin). \n' \
                             'P.S. Other commands are coming soon!'
             send_message(chat_id, text=commands_text)
 
         elif re.search(pattern, message):
             price = get_price(parse_text(message))
-            if type(price) == float:
-                send_message(chat_id, text='Цена криптовалюты: {} USD.'.format(price))
+            if type(price) == tuple:
+                send_message(chat_id, text='Цена криптовалюты {0} ({1}): {2} USD.'.format(price[1], price[2], price[0]))
             else:
                 send_message(chat_id, text=price)
         else:
